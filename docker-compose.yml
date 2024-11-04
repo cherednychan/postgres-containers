@@ -1,0 +1,44 @@
+#version: '3.8'
+
+services:
+  container2:
+    image: ubuntu:latest
+    build: ./ubuntu
+    container_name: ubuntu
+    networks:
+      new_network:
+        ipv4_address: 172.19.91.2
+    volumes:
+      - ./ubuntu_data:/app
+      - /home/manulmanul/.ssh:/root/.ssh  
+    command: /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+    ports:
+      - "2222:22"
+
+  container1:
+    image: postgres:15
+    build: ./postgres
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres_manul
+      POSTGRES_PASSWORD: manul
+      POSTGRES_DB: my_database
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql 
+      - /home/manulmanul/.ssh:/root/.ssh
+    networks:
+      new_network:
+        ipv4_address: 172.19.91.3
+    expose:
+      - "5432"
+    ports:
+      - "2223:22"
+    command: /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+
+networks:
+  new_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.91.0/24
